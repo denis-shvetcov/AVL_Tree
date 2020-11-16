@@ -239,7 +239,11 @@ public class AVLTree<T extends Comparable<T>> extends AbstractSet<T> implements 
 
         @Override
         public void remove() {
-            AVLTree.this.remove(lastReturned);
+            if (lastReturned!= null) {
+                AVLTree.this.remove(lastReturned);
+                lastReturned = null;
+            }
+            else throw new IllegalStateException();
         }
     }
 
