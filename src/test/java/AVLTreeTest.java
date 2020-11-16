@@ -248,9 +248,8 @@ class AVLTreeTest {
                         "Итератор обходит дерево неверно."
                 );
             }
-
-            assertThrows(NoSuchElementException.class, avlIter::next, "Итератор содержит элементы, после полного перебора.");
-            }
+            assertThrows(NoSuchElementException.class, avlIter::next,
+                    "Итератор содержит элементы, после полного перебора."); }
     }
 
      @Test
