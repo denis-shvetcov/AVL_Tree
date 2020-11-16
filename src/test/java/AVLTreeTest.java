@@ -217,7 +217,7 @@ class AVLTreeTest {
         Set<Integer> controlSet;
         AVLTree<Integer> tree;
         for (int i = 0 ; i<100; i++) {
-             controlSet = new HashSet<>();
+             controlSet = new TreeSet<>();
             for (int j = 0 ; j<20; j++) {
                 controlSet.add(random.nextInt(100));
             }
