@@ -253,32 +253,5 @@ public class AVLTree<T extends Comparable<T>> extends AbstractSet<T> implements 
         return size;
     }
 
-    @Override
-    public String toString() {
-        String result = new String();
-        String[] kids = new String[10];
-        Arrays.fill(kids, "");
-        Stack<Node<T>> stack = new Stack<>();
-        stack.push(root);
-//        System.out.println("Корень " + root.value);
-//        System.out.println("Левый ребенок корня " + root.left.value);
-//        System.out.println("Правый ребенок корня " + root.right.value);
-//        System.out.println("Левый ребенок левого ребенка корня " + root.left.left.value);
-//        System.out.println("Правый ребенок левого ребенка корня " + root.left.right.value);
-//        System.out.println("Левый ребенок правого ребенка корня " + root.right.left.value);
-//        System.out.println("Правый ребенок правого ребенка корня " + root.right.right.value);
-        while (!stack.empty()) {
-            Node<T> node = stack.pop();
-            kids[node.height] += node.value + "    ";
-            if (node.left != null) stack.push(node.left);
-            if (node.right != null) stack.push(node.right);
-
-        }
-
-
-        for (int i = kids.length - 1; i > 0; i--) result += kids[i] + "\n";
-        return result;
-    }
-
 
 }
