@@ -1,4 +1,3 @@
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 
@@ -13,47 +12,47 @@ class AVLTreeTest {
     void height() {
         AVLTree<Integer> tree = new AVLTree<>();
 
-        tree.insert(20);
+        tree.add(20);
         assertEquals(1, tree.height());
         assertEquals(20, tree.getRootValue(), "Сменился корень, хотя не должен был.");
 
-        tree.insert(29);
+        tree.add(29);
         assertEquals(2, tree.height());
         assertEquals(20, tree.getRootValue(), "Сменился корень, хотя не должен был.");
 
-        tree.insert(24); // большое левое вращение от 20, корень сменился на 24
+        tree.add(24); // большое левое вращение от 20, корень сменился на 24
         assertEquals(2, tree.height());
         assertEquals(24, tree.getRootValue(), "Сменился корень, хотя не должен был.");
 
-        tree.insert(45);
+        tree.add(45);
         assertEquals(3, tree.height());
         assertEquals(24, tree.getRootValue(), "Сменился корень, хотя не должен был.");
 
-        tree.insert(54); // дерево перебалансировалось, был совершен левый поворот от 29, сохранилась высота 3
+        tree.add(54); // дерево перебалансировалось, был совершен левый поворот от 29, сохранилась высота 3
         assertEquals(3, tree.height());
         assertEquals(24, tree.getRootValue(), "Сменился корень, хотя не должен был.");
 
-        tree.insert(50); // перебалансировка, левый поворот от корня = 24, корень сменился на 45
+        tree.add(50); // перебалансировка, левый поворот от корня = 24, корень сменился на 45
         assertEquals(3, tree.height());
         assertEquals(45, tree.getRootValue(), "Сменился корень, хотя не должен был.");
 
-        tree.insert(61);
+        tree.add(61);
         assertEquals(3, tree.height());
         assertEquals(45, tree.getRootValue(), "Сменился корень, хотя не должен был.");
 
-        tree.insert(15);
+        tree.add(15);
         assertEquals(4, tree.height()); // увеличилась высота
         assertEquals(45, tree.getRootValue(), "Сменился корень, хотя не должен был.");
 
-        tree.insert(10); // произошла перебалансировка 0 правый поворот от 24
+        tree.add(10); // произошла перебалансировка 0 правый поворот от 24
         assertEquals(4, tree.height());
         assertEquals(45, tree.getRootValue(), "Сменился корень, хотя не должен был.");
 
-        tree.insert(28);
+        tree.add(28);
         assertEquals(4, tree.height());
         assertEquals(45, tree.getRootValue(), "Сменился корень, хотя не должен был.");
 
-        tree.insert(35);
+        tree.add(35);
         assertEquals(4, tree.height());
         assertEquals(45, tree.getRootValue(), "Сменился корень, хотя не должен был.");
 
@@ -103,7 +102,7 @@ class AVLTreeTest {
         for (int i = 0; i < 100; i++) {
             value = random.nextInt(100);
             controlSet.add(value);
-            tree.insert(value);
+            tree.add(value);
         }
         for (int element : controlSet)
             assertTrue(tree.contains(element), "Дерево не содержит " + element);
@@ -121,7 +120,7 @@ class AVLTreeTest {
             AVLTree<Integer> tree = new AVLTree<>();
             for (int element : controlSet) {
                 assertTrue(
-                        tree.insert(element),
+                        tree.add(element),
                         "Элемент не был добавлен, хотя должен был."
                 );
                 assertTrue(
@@ -133,7 +132,7 @@ class AVLTreeTest {
                         "Нарушена инвариантность дерева."
                 );
                 assertFalse(
-                        tree.insert(element),
+                        tree.add(element),
                         "Элемент был добавлен дважды."
                 );
             }
@@ -170,7 +169,7 @@ class AVLTreeTest {
             System.out.println("Исходный набор: " + controlSet);
             tree = new AVLTree<>();
             for (int element : controlSet) {
-                tree.insert(element);
+                tree.add(element);
             }
             controlSet.remove(toRemove);
             System.out.println("Контрольный сет: " + controlSet.toString());
@@ -228,7 +227,7 @@ class AVLTreeTest {
                     "Итератор пустого дерева не должен иметь ни один элемент."
             );
             for (int element : controlSet) {
-                tree.insert(element);
+                tree.add(element);
             }
             Iterator<Integer> iterator1 = tree.iterator();
             Iterator<Integer> iterator2 = tree.iterator();
@@ -271,7 +270,7 @@ class AVLTreeTest {
             System.out.println("Начальный сет: " + controlSet.toString());
             tree = new AVLTree<>();
             for (int element : controlSet) {
-                tree.insert(element);
+                tree.add(element);
             }
             controlSet.remove(toRemove);
             System.out.println("Контрольный сет: " + controlSet.toString());
@@ -320,7 +319,7 @@ class AVLTreeTest {
         AVLTree<Integer> tree = new AVLTree<>();
 
         for (int i = 0; i < 10; i++) {
-            tree.insert(i * 2);
+            tree.add(i * 2);
         }
         assertEquals(10, tree.size());
         for (int i = 10; i > 0; i--) {
