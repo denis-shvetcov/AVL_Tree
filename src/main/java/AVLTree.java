@@ -358,6 +358,7 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
         return new SubSet(this, null, null, t, b);
     }
 
+    @NotNull
     @Override
     public NavigableSet<T> tailSet(T t, boolean b) {
         return new SubSet(this, t, b, null, null);

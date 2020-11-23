@@ -45,6 +45,7 @@ public class main {
         set.add(55);
         set.add(12);
 
+        Integer[] arr= tree.toArray();
         System.out.println(  set.retainAll(list));
         System.out.println(set.size());
 
