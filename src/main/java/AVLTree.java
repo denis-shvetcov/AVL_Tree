@@ -1,7 +1,5 @@
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.w3c.dom.ls.LSOutput;
 
 import java.util.*;
 
@@ -24,15 +22,7 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
         }
     }
 
-    @Override
-    public T first() {
-        return null;
-    }
-
-    @Override
-    public T last() {
-        return null;
-    }
+    T getRootValue() { return root.value; }
 
     private Node<T> find(T value) {
         if (root == null) return null;
@@ -174,41 +164,52 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
     }
 
     private Node<T> findMin(Node<T> node) {
-        return node.left == null ? node : findMin(node.left);
+        return root == null ? null : node.left == null ? node : findMin(node.left);
     }
 
     private Node<T> findMax(Node<T> node) {
-        return node.right == null ? node : findMax(node.right);
+        return root == null ? null : node.right == null ? node : findMax(node.right);
     }
 
 
     private class AVLIterator implements Iterator<T> {
-        Deque<Node<T>> leftStack = new LinkedList<>();
+        Deque<Node<T>> stack = new LinkedList<>();
         T lastReturned = null;
+        boolean isDescending;
 
-        private AVLIterator() {
+        private AVLIterator(boolean isDescending) {
+            this.isDescending = isDescending;
             fillStacks(root);
         }
 
         @Override
         public boolean hasNext() {
-            return !leftStack.isEmpty();
+            return !stack.isEmpty();
         }
 
         @Override
         public T next() {
             if (hasNext()) {
-                Node<T> toReturn = leftStack.pollLast();
-                fillStacks(toReturn.right);
-                lastReturned = toReturn.value;
-                return toReturn.value;
+                Node<T> toReturn = stack.pollLast();
+                if (!isDescending) {
+                    fillStacks(toReturn.right);
+                    lastReturned = toReturn.value;
+                    return toReturn.value;
+                } else {
+                    fillStacks(toReturn.left);
+                    lastReturned = toReturn.value;
+                    return toReturn.value;
+                }
             } else throw new NoSuchElementException();
         }
 
         private void fillStacks(Node<T> node) {
             if (node != null) {
-                leftStack.add(node);
-                fillStacks(node.left);
+                stack.add(node);
+                if (!isDescending)
+                    fillStacks(node.left);
+                else
+                    fillStacks(node.right);
             }
         }
 
@@ -230,9 +231,8 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
         while (current != null) {
             currentVal = current.value;
             int compareToT = currentVal.compareTo(t);
-
             if (compareToT < 0 && currentVal.compareTo(biggest) > 0) biggest = currentVal;
-            if (compareToT > 0)
+            if (compareToT >= 0)
                 current = current.left;
             else
                 current = current.right;
@@ -269,6 +269,7 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
     @Override
     public T floor(T t) {
         if (root == null) return null;
+        if (t == null) return last();
         Node<T> current = root;
         T biggest = root.value.compareTo(t) > 0 ? findMin(root).value : root.value;
         T currentVal;
@@ -291,6 +292,8 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
     @Override
     public T ceiling(T t) {
         if (root == null) return null;
+        if (t == null) return first();
+
         Node<T> current = root;
         T least = root.value.compareTo(t) < 0 ? findMax(root).value : root.value;
         T currentVal;
@@ -310,84 +313,91 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
             return least;
     }
 
-
     @Override
     public T pollFirst() {
-        T val;
-        if (root == null)
-            return null;
-        else
-            val = findMin(root).value;
+        T val = first();
         remove(val);
         return val;
     }
 
     @Override
     public T pollLast() {
-        T val;
-        if (root == null)
-            return null;
-        else
-            val = findMax(root).value;
+        T val = last();
         remove(val);
         return val;
     }
 
     @Override
-    public Iterator<T> iterator() {
-        return new AVLIterator();
+    public T first() {
+        return findMin(root).value;
     }
 
+    @Override
+    public T last() {
+        return findMax(root).value;
+    }
+
+    @NotNull
+    @Override
+    public Iterator<T> iterator() {
+        return new AVLIterator(false);
+    }
+
+    @NotNull
     @Override
     public NavigableSet<T> descendingSet() {
-        return null;
+        return new SubSet(this, null, null, null, null, true);
     }
 
+    @NotNull
     @Override
     public Iterator<T> descendingIterator() {
-        return null;
+        return new AVLIterator(true);
     }
 
+    @NotNull
     @Override
     public NavigableSet<T> subSet(T t, boolean b, T e1, boolean b1) {
-        return new SubSet(this, t, b, e1, b1);
+        return new SubSet(this, t, b, e1, b1, false);
     }
 
+    @NotNull
     @Override
     public NavigableSet<T> headSet(T t, boolean b) {
-        return new SubSet(this, null, null, t, b);
+        return new SubSet(this, null, null, t, b, false);
     }
 
     @NotNull
     @Override
     public NavigableSet<T> tailSet(T t, boolean b) {
-        return new SubSet(this, t, b, null, null);
+        return new SubSet(this, t, b, null, null, false);
     }
 
     @NotNull
     @Override
     public SortedSet<T> subSet(T t, T e1) {
-        return new SubSet(this, t, true, e1, false);
+        return new SubSet(this, t, true, e1, false, false);
     }
 
     @NotNull
     @Override
     public SortedSet<T> headSet(T t) {
-        return new SubSet(this, null, null, t, false);
+        return new SubSet(this, null, null, t, false, false);
     }
 
     @NotNull
     @Override
     public SortedSet<T> tailSet(T t) {
-        return new SubSet(this, t, true, null, null);
+        return new SubSet(this, t, true, null, null, false);
     }
 
 
     @Override
     public Comparator<? super T> comparator() {
-        return null;
+        return (Comparator<T>) (o, t1) -> o.compareTo(t1);
     }
 
+    @NotNull
     @Override
     public Object[] toArray() {
         Object[] elements = new Object[size];
@@ -398,6 +408,7 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
         return elements;
     }
 
+    @NotNull
     @Override
     public <T1> T1[] toArray(T1[] t1s) {
         T1[] elements = null;
@@ -417,10 +428,6 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
     }
 
 
-    public T getRootValue() {
-        return root.value;
-    }
-
     public boolean checkInvariant() {
         return root == null || checkInvariant(root);
     }
@@ -439,46 +446,37 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
     @Override
     public boolean containsAll(Collection<?> collection) {
         for (Object element : collection) {
-            if (!contains((T) element)) return false;
+            if (!contains(element)) return false;
         }
         return true;
     }
 
     @Override
     public boolean addAll(Collection<? extends T> collection) {
-//        for (Object element : collection) {
-//            if (!this.contains(element)) return false;
-//        }
+        int oldSize = size;
         for (Object element : collection) {
-//            if (!add((T) element)) return false;
             add((T) element);
         }
-        return true;
+        return size > oldSize;
     }
 
+    @NotNull
     @Override
     public boolean retainAll(Collection<?> collection) {
-//        for (Object element : collection) {
-//            if (!this.contains(element)) return false;
-//        }
+        int oldSize = size;
         for (Object element : this) {
             if (!collection.contains(element)) remove(element);
         }
-
-//        return size == collection.size();
-        return true;
+        return oldSize < size;
     }
 
     @Override
     public boolean removeAll(Collection<?> collection) {
-//        for (Object element : collection) {
-//            if (!this.contains(element)) return false;
-//        }
+        int oldSize = size;
         for (Object element : collection) {
-//            if (!remove((T) element)) return false;
             remove(element);
         }
-        return true;
+        return oldSize > size;
     }
 
     @Override
@@ -488,9 +486,7 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
     }
 
     @Override
-    public int size() {
-        return size;
-    }
+    public int size() { return size; }
 
     @Override
     public boolean isEmpty() {
@@ -498,41 +494,45 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
     }
 
 
-    class SubSet<D extends T> implements NavigableSet {
+    class SubSet implements NavigableSet<T> {
         T from;
         T to;
         Boolean fromIncluded;
         Boolean toIncluded;
         int size;
         AVLTree<T> tree;
+        boolean descending;
 
-        public SubSet(AVLTree<T> tree, T from, Boolean fromIncluded, T to, Boolean toIncluded) {
+        public SubSet(AVLTree<T> tree, T from, Boolean fromIncluded, T to, Boolean toIncluded, boolean descending) {
             this.tree = tree;
             this.from = from;
             this.to = to;
             this.fromIncluded = fromIncluded;
             this.toIncluded = toIncluded;
-            this.size = countSize();
+            this.descending = descending;
+            countSize();
         }
 
-        private int countSize() {
-            Iterator<T> iter = new AVLIterator();
-            T val;
+        private void countSize() {
+            Iterator<T> iter = iterator();
+
+            int counter = 0;
             while (iter.hasNext()) {
-                val = iter.next();
-                if (isValid(val)) size++;
+                iter.next();
+                counter++;
             }
-            ;
-            return size;
+            size = counter;
         }
 
         @Override
         public int size() {
+            countSize();
             return size;
         }
 
         @Override
         public boolean isEmpty() {
+            countSize();
             return size == 0;
         }
 
@@ -545,82 +545,121 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
         }
 
         @Override
-        public D lower(Object o) {
-            D val = (D) o;
-            if (val.compareTo(from) <= 0)
-                return null;
-            D result = (D) tree.lower(val);
+        public T lower(T val) {
+            if (!descending)
+                return privLower(val);
+            else
+                return privHigher(val);
+        }
+
+        @Override
+        public T higher(T val) {
+            if (!descending)
+                return privHigher(val);
+            else
+                return privLower(val);
+        }
+
+        @Override
+        public T floor(T val) {
+            if (!descending)
+                return privFloor(val);
+            else
+                return privCeiling(val);
+        }
+
+        @Override
+        public T ceiling(T val) {
+            if (!descending)
+                return privCeiling(val);
+            else
+                return privFloor(val);
+        }
+
+        private T privLower(T val) {
+            T result = tree.lower(val);
             if (!isValid(result))
                 return null;
             else return result;
         }
 
-        @Override
-        public D higher(Object o) {
-            D val = (D) o;
-            if (val.compareTo(to) >= 0)
-                return null;
-            D result = (D) tree.higher(val);
+        private T privHigher(T val) {
+            T result = tree.higher(val);
             if (!isValid(result))
                 return null;
             else return result;
         }
 
-        @Override
-        public D floor(Object o) {
-            D val = (D) o;
-            if (val.compareTo(from) < 0)
-                return null;
-            D result = (D) tree.floor(val);
-            if (!isValid(result))
-                return null;
-            else return result;
+        private T privFloor(T val) {
+            T result = (T) tree.floor(val);
+            if (!isValid(result)) {
+                if (!isValid(result = tree.lower(val)))
+                    return null;
+            }
+            return result;
+        }
+
+        private T privCeiling(T val) {
+            T result = tree.ceiling(val);
+            if (!isValid(result)) {
+                if (!isValid(result = tree.higher(val)))
+                    return null;
+            }
+            return result;
         }
 
         @Override
-        public D ceiling(Object o) {
-            D val = (D) o;
-            if (val.compareTo(to) > 0)
-                return null;
-            D result = (D) tree.ceiling(val);
-            if (!isValid(result))
-                return null;
-            else return result;
+        public T first() {
+            if (from == to && to == null && !descending)
+                return tree.first();
+            else if (!descending)
+                return ceiling(from);
+            else return privFloor(to);
         }
 
         @Override
-        public D pollFirst() {
-            D val = first();
+        public T last() {
+            if (from == to && to == null && !descending)
+                return tree.last();
+            else if (!descending)
+                return floor(to);
+            else return privCeiling(from);
+        }
+
+        @Override
+        public T pollFirst() {
+            T val = first();
             remove(val);
             return val;
         }
 
         @Override
-        public D pollLast() {
-            D val = (D) floor(to);
+        public T pollLast() {
+            T val = floor(to);
             remove(val);
             return val;
         }
 
         @Override
-        public Iterator<D> iterator() {
-            return new SubSetIterator<D>();
+        public Iterator<T> iterator() {
+            return new SubSetIterator(descending);
         }
 
         @Override
-        public boolean add(Object o) {
-            T val = (T) o;
+        public boolean add(T val) {
             if (isValid(val)) {
-                size++;
-                return tree.add(val);
+                boolean res = tree.add(val);
+                if (res) countSize();
+                return res;
             } else return false;
         }
 
         @NotNull
         @Override
         public Object[] toArray() {
+            countSize();
             Object[] elements = new Object[size];
-            Iterator<D> iter = new SubSetIterator<D>();
+            Iterator<T> iter = new SubSetIterator(descending);
             for (int i = 0; i < size; i++) {
                 elements[i] = iter.next();
             }
@@ -629,94 +668,98 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
 
         @NotNull
         @Override
-        public Object[] toArray(@NotNull Object[] objects) {
-            D[] elements = null;
-            if (objects.length < size) elements = (D[]) new Object[size];
-            Iterator<D> iter = new SubSetIterator<>();
+        public T[] toArray(@NotNull Object[] objects) {
+            countSize();
+            T[] elements = null;
+            if (objects.length < size) elements = (T[]) new Object[size];
+            Iterator<T> iter = new SubSetIterator(descending);
             if (elements != null) {
                 for (int i = 0; i < size; i++) {
-                    elements[i] = (D) iter.next();
+                    elements[i] = iter.next();
                 }
                 return elements;
             } else {
                 for (int i = 0; i < size; i++) {
-                    objects[i] = (D) iter.next();
+                    objects[i] = iter.next();
                 }
             }
-            return objects;
-        }
-
-        @Override
-        public NavigableSet<D> descendingSet() {
-            return null;
-        }
-
-        @Override
-        public Iterator<D> descendingIterator() {
-            return null;
+            return (T[]) objects;
         }
 
         @NotNull
         @Override
-        public NavigableSet<D> subSet(Object o, boolean b, Object e1, boolean b1) {
-            return new SubSet(tree, (T) o, b, (T) e1, b1);
+        public NavigableSet<T> descendingSet() {
+            return new SubSet(tree, null, null, null, null, !descending);
         }
 
         @NotNull
         @Override
-        public NavigableSet<D> headSet(Object o, boolean b) {
-            return new SubSet(tree, null, null, (T) o, b);
+        public Iterator<T> descendingIterator() {
+            return new SubSetIterator(!descending);
         }
 
         @NotNull
         @Override
-        public NavigableSet<D> tailSet(Object o, boolean b) {
-            return new SubSet(tree, (T) o, b, null, null);
-
-        }
-
-
-        @NotNull
-        @Override
-        public NavigableSet<D> subSet(Object o, Object e1) {
-            return new SubSet(tree, (T) o, true, (T) e1, false);
+        public NavigableSet<T> subSet(T o, boolean b, T e1, boolean b1) {
+            return new SubSet(tree, o, b, e1, b1, descending);
         }
 
         @NotNull
         @Override
-        public SortedSet<D> headSet(Object o) {
-            return new SubSet(tree, null, null, (T) o, false);
+        public NavigableSet<T> headSet(T o, boolean b) {
+            if (!descending)
+                return new SubSet(tree, null, null, o, b, descending);
+            else
+                return new SubSet(tree, o, b, null, null, descending);
+        }
+
+        @NotNull
+        @Override
+        public NavigableSet<T> tailSet(T o, boolean b) {
+            if (!descending)
+                return new SubSet(tree, o, b, null, null, descending);
+            else
+                return new SubSet(tree, null, null, o, b, descending);
 
         }
 
         @NotNull
         @Override
-        public SortedSet<D> tailSet(Object o) {
-            return new SubSet(tree, (T) o, true, null, null);
+        public NavigableSet<T> subSet(T o, T e1) {
+            return new SubSet(tree, o, true, e1, false, descending);
+        }
 
+        @NotNull
+        @Override
+        public SortedSet<T> headSet(T o) {
+            if (!descending)
+                return new SubSet(tree, null, null, o, false, descending);
+            else
+                return new SubSet(tree, o, false, null, null, descending);
+
+        }
+
+        @NotNull
+        @Override
+        public SortedSet<T> tailSet(T o) {
+            if (!descending)
+                return new SubSet(tree, (T) o, true, null, null, descending);
+            else
+                return new SubSet(tree, null, null, (T) o, true, descending);
         }
 
         @Override
         public Comparator comparator() {
-            return null;
-        }
-
-        @Override
-        public D first() {
-            return ceiling(from);
-        }
-
-        @Override
-        public D last() {
-            return floor(to);
+            return (Comparator<T>) (o, t1) -> o.compareTo(t1);
         }
 
         @Override
         public boolean remove(Object o) {
             T val = (T) o;
             if (isValid(val)) {
-                size--;
-                return tree.remove(val);
+                boolean res = tree.remove(val);
+                if (res) countSize();
+                return res;
             } else return false;
         }
 
@@ -728,7 +771,7 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
                 if (!isValid(val)) return false;
             }
             boolean result = tree.addAll(collection);
-            if (result) size += collection.size();
+            if (result) countSize();
             return result;
         }
 
@@ -752,7 +795,7 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
                 if (!isValid(val)) return false;
             }
             boolean result = tree.removeAll(collection);
-            if (result) size -= collection.size();
+            if (result) countSize();
             return result;
         }
 
@@ -770,7 +813,6 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
             tree.clear();
             size = 0;
         }
-
 
         private boolean isValid(T val) {
             if (val == null)
@@ -803,43 +845,72 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
             else return false;
         }
 
-        private class SubSetIterator<D> implements Iterator {
-            Deque<Node<T>> leftStack = new LinkedList<>();
+        private class SubSetIterator implements Iterator {
+            Deque<Node<T>> stack = new LinkedList<>();
             T lastReturned = null;
+            boolean isDecsending;
 
-            private SubSetIterator() {
-                if (isValid(root.value)) {
-                    fillStacks(root);
-                } else if (!isBelowCeil(root.value)) {
-                    fillStacks(root.left);
-                } else {
-                    fillStacks(root.right);
+            private SubSetIterator(boolean isDecsending) {
+                this.isDecsending = isDecsending;
+                if (root != null) {
+                    if (!isDecsending) {
+                        if (isValid(root.value))
+                            fillStacks(root);
+                        else if (!isBelowCeil(root.value)) {
+                            fillStacks(root.left);
+                        } else {
+                            fillStacks(root.right);
+                        }
+                    } else {
+                        if (isValid(root.value))
+                            fillStacks(root);
+                        else if (isBelowCeil(root.value)) {
+                            fillStacks(root.right);
+                        } else {
+                            fillStacks(root.left);
+                        }
+                    }
                 }
             }
 
             @Override
             public boolean hasNext() {
-                return !leftStack.isEmpty();
+                return !stack.isEmpty();
             }
 
             @Override
             public T next() {
                 if (hasNext()) {
-                    Node<T> toReturn = leftStack.pollLast();
-                    if (isBelowCeil(toReturn.value)) fillStacks(toReturn.right);
-                    lastReturned = toReturn.value;
-                    return toReturn.value;
+                    Node<T> toReturn = stack.pollLast();
+                    if (!isDecsending) {
+                        if (isBelowCeil(toReturn.value)) fillStacks(toReturn.right);
+                        lastReturned = toReturn.value;
+                        return toReturn.value;
+                    } else {
+                        if (isAboveFloor(toReturn.value)) fillStacks(toReturn.left);
+                        lastReturned = toReturn.value;
+                        return toReturn.value;
+                    }
                 } else throw new NoSuchElementException();
             }
 
             private void fillStacks(Node<T> node) {
                 if (node != null) {
-                    if (!isAboveFloor(node.value)) {
+                    if (!isDecsending) {
+                        if (!isAboveFloor(node.value)) {
+                            fillStacks(node.right);
+                            return;
+                        }
+                        if (isBelowCeil(node.value)) stack.add(node);
+                        fillStacks(node.left);
+                    } else {
+                        if (!isBelowCeil(node.value)) {
+                            fillStacks(node.left);
+                            return;
+                        }
+                        if (isAboveFloor(node.value)) stack.add(node);
                         fillStacks(node.right);
-                        return;
                     }
-                    if (isBelowCeil(node.value)) leftStack.add(node);
-                    fillStacks(node.left);
                 }
             }
 
