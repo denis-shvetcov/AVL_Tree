@@ -8,7 +8,7 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
     private Node<T> root;
     private int size = 0;
 
-    private class Node<T> {
+    private static class Node<T> {
         private T value;
         private int height;
         private Node<T> left;
@@ -22,7 +22,9 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
         }
     }
 
-    T getRootValue() { return root.value; }
+    T getRootValue() {
+        return root.value;
+    }
 
     private Node<T> find(T value) {
         if (root == null) return null;
@@ -59,9 +61,11 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
             size++;
             return true;
         }
-        add(root, value);
-        size++;
-        return true;
+        Node<T> result = add(root, value);
+        if (result != null) {
+            size++;
+            return true;
+        } else return false;
     }
 
     @Override
@@ -81,7 +85,7 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
         int comparision = parent.value.compareTo(value);
         if (comparision > 0) {
             parent.left = add(parent.left, value);
-        } else {
+        } else if (comparision < 0) {
             parent.right = add(parent.right, value);
         }
         fixHeight(parent);
@@ -329,12 +333,16 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
 
     @Override
     public T first() {
-        return findMin(root).value;
+        if (size != 0)
+            return findMin(root).value;
+        else throw new NoSuchElementException();
     }
 
     @Override
     public T last() {
-        return findMax(root).value;
+        if (size != 0)
+            return findMax(root).value;
+        else throw new NoSuchElementException();
     }
 
     @NotNull
@@ -346,7 +354,7 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
     @NotNull
     @Override
     public NavigableSet<T> descendingSet() {
-        return new SubSet(this, null, null, null, null, true);
+        return new SubSet(null, null, null, null, true);
     }
 
     @NotNull
@@ -358,37 +366,37 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
     @NotNull
     @Override
     public NavigableSet<T> subSet(T t, boolean b, T e1, boolean b1) {
-        return new SubSet(this, t, b, e1, b1, false);
+        return new SubSet(t, b, e1, b1, false);
     }
 
     @NotNull
     @Override
     public NavigableSet<T> headSet(T t, boolean b) {
-        return new SubSet(this, null, null, t, b, false);
+        return new SubSet(null, null, t, b, false);
     }
 
     @NotNull
     @Override
     public NavigableSet<T> tailSet(T t, boolean b) {
-        return new SubSet(this, t, b, null, null, false);
+        return new SubSet(t, b, null, null, false);
     }
 
     @NotNull
     @Override
     public SortedSet<T> subSet(T t, T e1) {
-        return new SubSet(this, t, true, e1, false, false);
+        return new SubSet(t, true, e1, false, false);
     }
 
     @NotNull
     @Override
     public SortedSet<T> headSet(T t) {
-        return new SubSet(this, null, null, t, false, false);
+        return new SubSet(null, null, t, false, false);
     }
 
     @NotNull
     @Override
     public SortedSet<T> tailSet(T t) {
-        return new SubSet(this, t, true, null, null, false);
+        return new SubSet(t, true, null, null, false);
     }
 
 
@@ -464,10 +472,17 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
     @Override
     public boolean retainAll(Collection<?> collection) {
         int oldSize = size;
-        for (Object element : this) {
-            if (!collection.contains(element)) remove(element);
+        List<Object> retain = new ArrayList<>();
+        List<Object> remove = new ArrayList<>();
+        for (Object element : collection) {
+            if (contains(element)) retain.add(element);
         }
-        return oldSize < size;
+        for (T element : this) {
+            if (!retain.contains(element)) remove.add(element);
+        }
+        removeAll(remove);
+
+        return oldSize > size;
     }
 
     @Override
@@ -486,7 +501,9 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
     }
 
     @Override
-    public int size() { return size; }
+    public int size() {
+        return size;
+    }
 
     @Override
     public boolean isEmpty() {
@@ -499,47 +516,52 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
         T to;
         Boolean fromIncluded;
         Boolean toIncluded;
-        int size;
-        AVLTree<T> tree;
+
         boolean descending;
 
-        public SubSet(AVLTree<T> tree, T from, Boolean fromIncluded, T to, Boolean toIncluded, boolean descending) {
-            this.tree = tree;
-            this.from = from;
-            this.to = to;
+        public SubSet(T from, Boolean fromIncluded, T to, Boolean toIncluded, boolean descending) {
+            if (!descending) {
+                if (to==null|| from==null || to.compareTo(from) > 0) {
+                    this.from = from;
+                    this.to = to;
+                } else throw new IllegalArgumentException();
+
+            } else {
+                if (to==null|| from==null || to.compareTo(from) < 0) {
+                    this.from = to;
+                    this.to = from;
+                } else throw new IllegalArgumentException();
+            }
             this.fromIncluded = fromIncluded;
             this.toIncluded = toIncluded;
             this.descending = descending;
             countSize();
         }
 
-        private void countSize() {
+        private int countSize() {
             Iterator<T> iter = iterator();
-
             int counter = 0;
             while (iter.hasNext()) {
                 iter.next();
                 counter++;
             }
-            size = counter;
+            return counter;
         }
 
         @Override
         public int size() {
-            countSize();
-            return size;
+            return countSize();
         }
 
         @Override
         public boolean isEmpty() {
-            countSize();
-            return size == 0;
+            return countSize() == 0;
         }
 
         @Override
         public boolean contains(Object o) {
             if (isValid((T) o))
-                return tree.contains((T) o);
+                return AVLTree.this.contains((T) o);
             else
                 return false;
         }
@@ -562,6 +584,7 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
 
         @Override
         public T floor(T val) {
+            if (contains(val)) return val;
             if (!descending)
                 return privFloor(val);
             else
@@ -570,6 +593,7 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
 
         @Override
         public T ceiling(T val) {
+            if (contains(val)) return val;
             if (!descending)
                 return privCeiling(val);
             else
@@ -577,32 +601,35 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
         }
 
         private T privLower(T val) {
-            T result = tree.lower(val);
-            if (!isValid(result))
-                return null;
-            else return result;
+            T result = AVLTree.this.lower(val);
+            ;
+            while (!isValid(result)) {
+                result = AVLTree.this.lower(result);
+            }
+            return result;
         }
 
         private T privHigher(T val) {
-            T result = tree.higher(val);
-            if (!isValid(result))
-                return null;
-            else return result;
+            T result = AVLTree.this.higher(val);
+            while (!isValid(result)) {
+                result = AVLTree.this.higher(result);
+            }
+            return result;
         }
 
         private T privFloor(T val) {
-            T result = (T) tree.floor(val);
+            T result = (T) AVLTree.this.floor(val);
             if (!isValid(result)) {
-                if (!isValid(result = tree.lower(val)))
+                if (!isValid(result = AVLTree.this.lower(val)))
                     return null;
             }
             return result;
         }
 
         private T privCeiling(T val) {
-            T result = tree.ceiling(val);
+            T result = AVLTree.this.ceiling(val);
             if (!isValid(result)) {
-                if (!isValid(result = tree.higher(val)))
+                if (!isValid(result = AVLTree.this.higher(val)))
                     return null;
             }
             return result;
@@ -610,8 +637,10 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
 
         @Override
         public T first() {
+            countSize();
+            if (countSize() == 0) throw new NoSuchElementException();
             if (from == to && to == null && !descending)
-                return tree.first();
+                return AVLTree.this.first();
             else if (!descending)
                 return ceiling(from);
             else return privFloor(to);
@@ -619,8 +648,10 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
 
         @Override
         public T last() {
+            countSize();
+            if (countSize() == 0) throw new NoSuchElementException();
             if (from == to && to == null && !descending)
-                return tree.last();
+                return AVLTree.this.last();
             else if (!descending)
                 return floor(to);
             else return privCeiling(from);
@@ -648,19 +679,19 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
         @Override
         public boolean add(T val) {
             if (isValid(val)) {
-                boolean res = tree.add(val);
+                boolean res = AVLTree.this.add(val);
                 if (res) countSize();
                 return res;
-            } else return false;
+            } else throw new IllegalArgumentException();
         }
 
         @NotNull
         @Override
         public Object[] toArray() {
             countSize();
-            Object[] elements = new Object[size];
+            Object[] elements = new Object[countSize()];
             Iterator<T> iter = new SubSetIterator(descending);
-            for (int i = 0; i < size; i++) {
+            for (int i = 0; i < elements.length; i++) {
                 elements[i] = iter.next();
             }
             return elements;
@@ -671,6 +702,7 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
         public T[] toArray(@NotNull Object[] objects) {
             countSize();
             T[] elements = null;
+            int size = countSize();
             if (objects.length < size) elements = (T[]) new Object[size];
             Iterator<T> iter = new SubSetIterator(descending);
             if (elements != null) {
@@ -689,7 +721,38 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
         @NotNull
         @Override
         public NavigableSet<T> descendingSet() {
-            return new SubSet(tree, null, null, null, null, !descending);
+            return new SubSet(to, fromIncluded, from, toIncluded, !descending);
+        }
+
+        public boolean isInRange(T fromV, Boolean fromInc, T toV, Boolean toInc) {
+            boolean fromPassed;
+            boolean toPassed;
+
+            if ( from == null||fromV==null)
+                fromPassed = true;
+            else {
+                int fromComp = fromV.compareTo(from);
+                if (fromComp < 0)
+                    fromPassed = false;
+                else if (fromComp == 0 && fromInc != fromIncluded)
+                    fromPassed = false;
+                else fromPassed = true;
+            }
+
+            if (to == null || toV ==null)
+                toPassed = true;
+            else {
+                int toComp = toV.compareTo(to);
+                if (toComp > 0)
+                    toPassed = false;
+                else if (toComp == 0 && toIncluded != toInc)
+                    toPassed = false;
+                else toPassed = true;
+            }
+
+
+            return toPassed && fromPassed;
+
         }
 
         @NotNull
@@ -701,51 +764,61 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
         @NotNull
         @Override
         public NavigableSet<T> subSet(T o, boolean b, T e1, boolean b1) {
-            return new SubSet(tree, o, b, e1, b1, descending);
+            if (isInRange(o, b, e1, b1))
+                return new SubSet(o, b, e1, b1, descending);
+            else throw new IllegalArgumentException();
         }
 
         @NotNull
         @Override
         public NavigableSet<T> headSet(T o, boolean b) {
-            if (!descending)
-                return new SubSet(tree, null, null, o, b, descending);
-            else
-                return new SubSet(tree, o, b, null, null, descending);
+            if (isInRange(null, null, o, b)) {
+                if (!descending)
+                    return new SubSet(from, fromIncluded, o, b, descending);
+                else
+                    return new SubSet(o, b, to, toIncluded, descending);
+            } else throw new IllegalArgumentException();
         }
 
         @NotNull
         @Override
         public NavigableSet<T> tailSet(T o, boolean b) {
-            if (!descending)
-                return new SubSet(tree, o, b, null, null, descending);
-            else
-                return new SubSet(tree, null, null, o, b, descending);
-
+            if (isInRange(o, b, null, null)) {
+                if (!descending)
+                    return new SubSet(o, b, to, toIncluded, descending);
+                else
+                    return new SubSet(from, fromIncluded, o, b, descending);
+            } else throw new IllegalArgumentException();
         }
 
         @NotNull
         @Override
         public NavigableSet<T> subSet(T o, T e1) {
-            return new SubSet(tree, o, true, e1, false, descending);
+            if (isInRange(o, true, e1, false))
+                return new SubSet(o, true, e1, false, descending);
+            else throw new IllegalArgumentException();
         }
 
         @NotNull
         @Override
         public SortedSet<T> headSet(T o) {
-            if (!descending)
-                return new SubSet(tree, null, null, o, false, descending);
-            else
-                return new SubSet(tree, o, false, null, null, descending);
-
+            if (isInRange(null, null, o, false)) {
+                if (!descending)
+                    return new SubSet(null, null, o, false, descending);
+                else
+                    return new SubSet(o, false, null, null, descending);
+            } else throw new IllegalArgumentException();
         }
 
         @NotNull
         @Override
         public SortedSet<T> tailSet(T o) {
-            if (!descending)
-                return new SubSet(tree, (T) o, true, null, null, descending);
-            else
-                return new SubSet(tree, null, null, (T) o, true, descending);
+            if (isInRange(o, true, null, null)) {
+                if (!descending)
+                    return new SubSet((T) o, true, null, null, descending);
+                else
+                    return new SubSet(null, null, (T) o, true, descending);
+            } else throw new IllegalArgumentException();
         }
 
         @Override
@@ -757,7 +830,7 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
         public boolean remove(Object o) {
             T val = (T) o;
             if (isValid(val)) {
-                boolean res = tree.remove(val);
+                boolean res = AVLTree.this.remove(val);
                 if (res) countSize();
                 return res;
             } else return false;
@@ -770,9 +843,7 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
                 val = (T) element;
                 if (!isValid(val)) return false;
             }
-            boolean result = tree.addAll(collection);
-            if (result) countSize();
-            return result;
+            return AVLTree.this.addAll(collection);
         }
 
         @Override
@@ -782,21 +853,19 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
                 val = (T) element;
                 if (!isValid(val)) return false;
             }
-            boolean result = tree.retainAll(collection);
-            if (result) size = collection.size();
-            return tree.retainAll(collection);
+            return AVLTree.this.retainAll(collection);
+
         }
 
         @Override
         public boolean removeAll(Collection collection) {
             T val;
+            List<Object> remove = new ArrayList<>();
             for (Object element : collection) {
                 val = (T) element;
-                if (!isValid(val)) return false;
+                if (isValid(val)) remove.add(element);
             }
-            boolean result = tree.removeAll(collection);
-            if (result) countSize();
-            return result;
+            return AVLTree.this.removeAll(remove);
         }
 
         @Override
@@ -810,8 +879,7 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
 
         @Override
         public void clear() {
-            tree.clear();
-            size = 0;
+            AVLTree.this.removeAll(this);
         }
 
         private boolean isValid(T val) {
@@ -849,6 +917,7 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
             Deque<Node<T>> stack = new LinkedList<>();
             T lastReturned = null;
             boolean isDecsending;
+            List<T> removeAfterIteration = new ArrayList<>();
 
             private SubSetIterator(boolean isDecsending) {
                 this.isDecsending = isDecsending;
@@ -891,7 +960,10 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
                         lastReturned = toReturn.value;
                         return toReturn.value;
                     }
-                } else throw new NoSuchElementException();
+                } else {
+                    AVLTree.this.removeAll(removeAfterIteration);
+                    throw new NoSuchElementException();
+                }
             }
 
             private void fillStacks(Node<T> node) {
@@ -917,7 +989,7 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
             @Override
             public void remove() {
                 if (lastReturned != null) {
-                    SubSet.this.remove(lastReturned);
+                    removeAfterIteration.add(lastReturned);
                     lastReturned = null;
                 } else throw new IllegalStateException();
             }

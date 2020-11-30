@@ -102,7 +102,7 @@ class AVLTreeTest {
             assertTrue(() -> subSet.add(validAddition), "Элемент, вмещающийся в интервал subSet не был добавлен в него.");
 
             int invalidAddition = fromElement - 1;
-            assertFalse(() -> subSet.add(invalidAddition), "Элемент,не вмещающийся в интервал subSet был успешно добавлен в него.");
+            assertThrows(IllegalArgumentException.class, () -> subSet.add(invalidAddition), "Элемент,не вмещающийся в интервал subSet был успешно добавлен в него.");
         }
     }
 
@@ -140,7 +140,7 @@ class AVLTreeTest {
             assertTrue(headSet.add(validAddition), "Элемент, входящий в интервал headSet не был добавлен");
 
             int invalidAddition = toElement + 1;
-            assertFalse(headSet.add(invalidAddition), "Элемент, не входящий в интервал headSet был добавлен");
+            assertThrows(IllegalArgumentException.class, () -> headSet.add(invalidAddition), "Элемент, не входящий в интервал headSet был добавлен");
         }
     }
 
@@ -233,7 +233,7 @@ class AVLTreeTest {
             assertTrue(tailSet.add(validAddition), "A valid element wasn't added.");
 
             int invalidAddition = fromElement - 1;
-            assertFalse(tailSet.add(invalidAddition), "An illegal argument was passed to add()");
+            assertThrows(IllegalArgumentException.class, () -> tailSet.add(invalidAddition), "An illegal argument was passed to add()");
         }
     }
 
@@ -319,8 +319,8 @@ class AVLTreeTest {
             NavigableSet<Integer> subSet2 = tree.subSet(step * 10, false, step * 30, false);
 
 
-            NavigableSet<Integer> desSubSet1 = treeDes.subSet(step * 10, true, step * 30, true);
-            NavigableSet<Integer> desSubSet2 = treeDes.subSet(step * 10, false, step * 30, false);
+            NavigableSet<Integer> desSubSet1 = treeDes.subSet(step * 30, true, step * 10, true);
+            NavigableSet<Integer> desSubSet2 = treeDes.subSet(step * 30, false, step * 10, false);
             System.out.println(subSet1.first() == null);
             assertTrue(subSet1.first() == step * 10);
 
@@ -362,8 +362,8 @@ class AVLTreeTest {
             NavigableSet<Integer> subSet2 = tree.subSet(step * 10, false, step * 30, false);
 
 
-            NavigableSet<Integer> desSubSet1 = treeDes.subSet(step * 10, true, step * 30, true);
-            NavigableSet<Integer> desSubSet2 = treeDes.subSet(step * 10, false, step * 30, true);
+            NavigableSet<Integer> desSubSet1 = treeDes.subSet(step * 30, true, step * 10, true);
+            NavigableSet<Integer> desSubSet2 = treeDes.subSet(step * 30, false, step * 10, true);
 
             assertTrue(subSet1.last() == step * 30);
             assertTrue(subSet2.last() == step * 29);
@@ -688,10 +688,10 @@ class AVLTreeTest {
             }
 
             int fromValue = rand.nextInt(50);
-            int toValue = rand.nextInt(50) +50;
+            int toValue = rand.nextInt(50) + 50;
 
-            NavigableSet<Integer> subTree = tree.subSet(fromValue,true,toValue,false);
-            NavigableSet<Integer> subControl = controlSet.subSet(fromValue,true,toValue,false);
+            NavigableSet<Integer> subTree = tree.subSet(fromValue, true, toValue, false);
+            NavigableSet<Integer> subControl = controlSet.subSet(fromValue, true, toValue, false);
 
             Iterator<Integer> treeIter = subTree.iterator();
             Iterator<Integer> treeIterDes = subTree.descendingIterator();
@@ -724,13 +724,13 @@ class AVLTreeTest {
             AVLTree<Integer> tree = new AVLTree<>();
             NavigableSet<Integer> des = tree.descendingSet();
 
-            int min=201;
-            int max=-1;
+            int min = 201;
+            int max = -1;
 
             for (int j = 0; j < 50; j++) {
                 int val = rand.nextInt(200);
-                if (val>max) max = val;
-                if (val<min) min = val;
+                if (val > max) max = val;
+                if (val < min) min = val;
                 tree.add(val);
             }
 
@@ -739,8 +739,8 @@ class AVLTreeTest {
             System.out.println(tree.lower(tree.getRootValue()));
             System.out.println(tree.higher(tree.getRootValue()));
 
-            assertTrue(tree.lower(tree.getRootValue())<tree.higher(tree.getRootValue()));
-            assertTrue(des.lower(tree.getRootValue())>des.higher(tree.getRootValue()));
+            assertTrue(tree.lower(tree.getRootValue()) < tree.higher(tree.getRootValue()));
+            assertTrue(des.lower(tree.getRootValue()) > des.higher(tree.getRootValue()));
         }
     }
 }
