@@ -353,7 +353,6 @@ class AVLTreeTest {
 
             tree.clear();
             int step = rand.nextInt(10) + 1;
-            int mid;
             for (int j = 0; j < 50; j++) {
                 tree.add(step * j);
             }
@@ -362,13 +361,13 @@ class AVLTreeTest {
             NavigableSet<Integer> subSet2 = tree.subSet(step * 10, false, step * 30, false);
 
 
-            NavigableSet<Integer> desSubSet1 = treeDes.subSet(step * 30, true, step * 10, true);
+            NavigableSet<Integer> desSubSet1 = treeDes.subSet(step * 30, true, step * 10, false);
             NavigableSet<Integer> desSubSet2 = treeDes.subSet(step * 30, false, step * 10, true);
 
             assertTrue(subSet1.last() == step * 30);
             assertTrue(subSet2.last() == step * 29);
-            assertTrue(desSubSet1.last() == step * 10);
-            assertTrue(desSubSet2.last() == step * 11);
+            assertTrue(desSubSet1.last() == step * 11);
+            assertTrue(desSubSet2.last() == step * 10);
         }
     }
 
@@ -736,8 +735,8 @@ class AVLTreeTest {
 
             assertEquals(des.first(), max);
             assertEquals(des.last(), min);
-            System.out.println(tree.lower(tree.getRootValue()));
-            System.out.println(tree.higher(tree.getRootValue()));
+            System.out.println(tree.getRootValue());
+
 
             assertTrue(tree.lower(tree.getRootValue()) < tree.higher(tree.getRootValue()));
             assertTrue(des.lower(tree.getRootValue()) > des.higher(tree.getRootValue()));

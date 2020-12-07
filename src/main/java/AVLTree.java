@@ -319,16 +319,24 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
 
     @Override
     public T pollFirst() {
-        T val = first();
-        remove(val);
-        return val;
+        try {
+            T val = first();
+            remove(val);
+            return val;
+        } catch (NoSuchElementException exc) {
+            return null;
+        }
     }
 
     @Override
     public T pollLast() {
-        T val = last();
-        remove(val);
-        return val;
+        try {
+            T val = last();
+            remove(val);
+            return val;
+        } catch (NoSuchElementException exc) {
+            return null;
+        }
     }
 
     @Override
@@ -472,16 +480,14 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
     @Override
     public boolean retainAll(Collection<?> collection) {
         int oldSize = size;
-        List<Object> retain = new ArrayList<>();
-        List<Object> remove = new ArrayList<>();
+        Set<Object> retain = new HashSet<>();
+        Set<Object> remove = new HashSet<>();
         for (Object element : collection) {
             if (contains(element)) retain.add(element);
         }
         for (T element : this) {
             if (!retain.contains(element)) remove.add(element);
         }
-        removeAll(remove);
-
         return oldSize > size;
     }
 
@@ -521,21 +527,21 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
 
         public SubSet(T from, Boolean fromIncluded, T to, Boolean toIncluded, boolean descending) {
             if (!descending) {
-                if (to==null|| from==null || to.compareTo(from) > 0) {
+                if (to == null || from == null || to.compareTo(from) > 0) {
                     this.from = from;
                     this.to = to;
+                    this.fromIncluded = fromIncluded;
+                    this.toIncluded = toIncluded;
                 } else throw new IllegalArgumentException();
-
             } else {
-                if (to==null|| from==null || to.compareTo(from) < 0) {
+                if (to == null || from == null || to.compareTo(from) < 0) {
                     this.from = to;
                     this.to = from;
+                    this.fromIncluded = toIncluded;
+                    this.toIncluded = fromIncluded;
                 } else throw new IllegalArgumentException();
             }
-            this.fromIncluded = fromIncluded;
-            this.toIncluded = toIncluded;
             this.descending = descending;
-            countSize();
         }
 
         private int countSize() {
@@ -601,43 +607,77 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
         }
 
         private T privLower(T val) {
-            T result = AVLTree.this.lower(val);
-            ;
-            while (!isValid(result)) {
-                result = AVLTree.this.lower(result);
+            int compare = to == null ? -1 : val.compareTo(to);
+            if (compare > 0) {
+                if (toIncluded != null && toIncluded)
+                    return to;
+                else
+                    return AVLTree.this.lower(to);
+            } else if (compare == 0) {
+                return AVLTree.this.lower(to);
+            } else {
+                compare = from == null ? 1 : val.compareTo(from);
+                if (compare <= 0)
+                    return null;
+                else return AVLTree.this.lower(val);
             }
-            return result;
         }
 
         private T privHigher(T val) {
-            T result = AVLTree.this.higher(val);
-            while (!isValid(result)) {
-                result = AVLTree.this.higher(result);
+            int compare = from == null ? 1 : val.compareTo(from);
+            if (compare < 0) {
+                if (fromIncluded != null && fromIncluded)
+                    return from;
+                else
+                    return AVLTree.this.higher(from);
+            } else if (compare == 0) {
+                return AVLTree.this.higher(from);
+            } else {
+                compare = to == null ? -1 : val.compareTo(to);
+                if (compare >= 0)
+                    return null;
+                else return AVLTree.this.higher(val);
             }
-            return result;
         }
 
         private T privFloor(T val) {
-            T result = (T) AVLTree.this.floor(val);
-            if (!isValid(result)) {
-                if (!isValid(result = AVLTree.this.lower(val)))
+            int compare = to == null ? -1 : val.compareTo(to);
+            if (compare >= 0) {
+                if (toIncluded != null && toIncluded)
+                    return to;
+                else
+                    return AVLTree.this.lower(to);
+            } else {
+                compare = from == null ? 1 : val.compareTo(from);
+                if (compare<0)
                     return null;
+                    else if (compare == 0 && fromIncluded != null && fromIncluded)
+                        return from;
+                    else return AVLTree.this.lower(val);
             }
-            return result;
         }
 
         private T privCeiling(T val) {
-            T result = AVLTree.this.ceiling(val);
-            if (!isValid(result)) {
-                if (!isValid(result = AVLTree.this.higher(val)))
+            int compare = from == null ? 1 : val.compareTo(from);
+            if (compare <= 0) {
+                if (fromIncluded != null && fromIncluded)
+                    return from;
+                else
+                    return AVLTree.this.higher(from);
+            } else {
+                compare = to == null ? -1 : val.compareTo(to);
+                if (compare>0)
                     return null;
+                else {
+                    if (compare == 0 &&toIncluded != null && toIncluded)
+                        return to;
+                    else return AVLTree.this.higher(val);
+                }
             }
-            return result;
         }
 
         @Override
         public T first() {
-            countSize();
             if (countSize() == 0) throw new NoSuchElementException();
             if (from == to && to == null && !descending)
                 return AVLTree.this.first();
@@ -648,7 +688,6 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
 
         @Override
         public T last() {
-            countSize();
             if (countSize() == 0) throw new NoSuchElementException();
             if (from == to && to == null && !descending)
                 return AVLTree.this.last();
@@ -659,16 +698,24 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
 
         @Override
         public T pollFirst() {
-            T val = first();
-            remove(val);
-            return val;
+            try {
+                T val = first();
+                remove(val);
+                return val;
+            } catch (NoSuchElementException exc) {
+                return null;
+            }
         }
 
         @Override
         public T pollLast() {
-            T val = floor(to);
-            remove(val);
-            return val;
+            try {
+                T val = floor(to);
+                remove(val);
+                return val;
+            } catch (NoSuchElementException exc) {
+                return null;
+            }
         }
 
         @Override
@@ -680,7 +727,6 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
         public boolean add(T val) {
             if (isValid(val)) {
                 boolean res = AVLTree.this.add(val);
-                if (res) countSize();
                 return res;
             } else throw new IllegalArgumentException();
         }
@@ -688,7 +734,6 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
         @NotNull
         @Override
         public Object[] toArray() {
-            countSize();
             Object[] elements = new Object[countSize()];
             Iterator<T> iter = new SubSetIterator(descending);
             for (int i = 0; i < elements.length; i++) {
@@ -700,7 +745,7 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
         @NotNull
         @Override
         public T[] toArray(@NotNull Object[] objects) {
-            countSize();
+
             T[] elements = null;
             int size = countSize();
             if (objects.length < size) elements = (T[]) new Object[size];
@@ -721,38 +766,26 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
         @NotNull
         @Override
         public NavigableSet<T> descendingSet() {
-            return new SubSet(to, fromIncluded, from, toIncluded, !descending);
+            return new SubSet(to, toIncluded, from, fromIncluded, !descending);
         }
 
         public boolean isInRange(T fromV, Boolean fromInc, T toV, Boolean toInc) {
-            boolean fromPassed;
-            boolean toPassed;
+            if (from != null && fromV != null) {
 
-            if ( from == null||fromV==null)
-                fromPassed = true;
-            else {
                 int fromComp = fromV.compareTo(from);
                 if (fromComp < 0)
-                    fromPassed = false;
-                else if (fromComp == 0 && fromInc != fromIncluded)
-                    fromPassed = false;
-                else fromPassed = true;
+                    return false;
+                else if ((fromComp == 0 && fromInc == true && fromIncluded == false))
+                    return false;
             }
-
-            if (to == null || toV ==null)
-                toPassed = true;
-            else {
+            if (to != null && toV != null) {
                 int toComp = toV.compareTo(to);
                 if (toComp > 0)
-                    toPassed = false;
-                else if (toComp == 0 && toIncluded != toInc)
-                    toPassed = false;
-                else toPassed = true;
+                    return false;
+                else if (toComp == 0 && toIncluded == false && toInc == true)
+                    return false;
             }
-
-
-            return toPassed && fromPassed;
-
+            return true;
         }
 
         @NotNull
@@ -764,37 +797,43 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
         @NotNull
         @Override
         public NavigableSet<T> subSet(T o, boolean b, T e1, boolean b1) {
-            if (isInRange(o, b, e1, b1))
+            boolean isInRange = !descending ? isInRange(o, b, e1, b1) : isInRange(e1, b1, o, b);
+            if (isInRange)
                 return new SubSet(o, b, e1, b1, descending);
+
             else throw new IllegalArgumentException();
+
         }
 
         @NotNull
         @Override
         public NavigableSet<T> headSet(T o, boolean b) {
-            if (isInRange(null, null, o, b)) {
+            boolean isInRange = !descending ? isInRange(null, null, o, b) : isInRange(o, b, null, null);
+            if (isInRange) {
                 if (!descending)
                     return new SubSet(from, fromIncluded, o, b, descending);
                 else
-                    return new SubSet(o, b, to, toIncluded, descending);
+                    return new SubSet(to, toIncluded, o, b, descending);
             } else throw new IllegalArgumentException();
         }
 
         @NotNull
         @Override
         public NavigableSet<T> tailSet(T o, boolean b) {
-            if (isInRange(o, b, null, null)) {
+            boolean isInRange = !descending ? isInRange(o, b, null, null) : isInRange(null, null, o, b);
+            if (isInRange) {
                 if (!descending)
                     return new SubSet(o, b, to, toIncluded, descending);
                 else
-                    return new SubSet(from, fromIncluded, o, b, descending);
+                    return new SubSet(o, b, from, fromIncluded, descending);
             } else throw new IllegalArgumentException();
         }
 
         @NotNull
         @Override
-        public NavigableSet<T> subSet(T o, T e1) {
-            if (isInRange(o, true, e1, false))
+        public SortedSet<T> subSet(T o, T e1) {
+            boolean isInRange = !descending ? isInRange(o, true, e1, false) : isInRange(e1, false, o, true);
+            if (isInRange)
                 return new SubSet(o, true, e1, false, descending);
             else throw new IllegalArgumentException();
         }
@@ -802,22 +841,24 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
         @NotNull
         @Override
         public SortedSet<T> headSet(T o) {
-            if (isInRange(null, null, o, false)) {
+            boolean isInRange = !descending ? isInRange(null, null, o, false) : isInRange(o, false, null, null);
+            if (isInRange) {
                 if (!descending)
-                    return new SubSet(null, null, o, false, descending);
+                    return new SubSet(from, fromIncluded, o, false, descending);
                 else
-                    return new SubSet(o, false, null, null, descending);
+                    return new SubSet(to, toIncluded, o, false, descending);
             } else throw new IllegalArgumentException();
         }
 
         @NotNull
         @Override
         public SortedSet<T> tailSet(T o) {
-            if (isInRange(o, true, null, null)) {
+            boolean isInRange = !descending ? isInRange(o, true, null, null) : isInRange(null, null, o, true);
+            if (isInRange) {
                 if (!descending)
-                    return new SubSet((T) o, true, null, null, descending);
+                    return new SubSet(o, true, to, toIncluded, descending);
                 else
-                    return new SubSet(null, null, (T) o, true, descending);
+                    return new SubSet(o, true, from, fromIncluded, descending);
             } else throw new IllegalArgumentException();
         }
 
@@ -831,41 +872,41 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
             T val = (T) o;
             if (isValid(val)) {
                 boolean res = AVLTree.this.remove(val);
-                if (res) countSize();
                 return res;
             } else return false;
         }
 
         @Override
         public boolean addAll(Collection collection) {
-            T val;
+            int oldSize = countSize();
             for (Object element : collection) {
-                val = (T) element;
-                if (!isValid(val)) return false;
+                add((T) element);
             }
-            return AVLTree.this.addAll(collection);
+            return oldSize < countSize();
         }
 
         @Override
         public boolean retainAll(Collection collection) {
-            T val;
+            int oldSize = AVLTree.this.size;
+            Set<Object> retain = new HashSet<>();
+            Set<Object> remove = new HashSet<>();
             for (Object element : collection) {
-                val = (T) element;
-                if (!isValid(val)) return false;
+                if (contains(element)) retain.add(element);
             }
-            return AVLTree.this.retainAll(collection);
-
+            for (T element : this) {
+                if (!retain.contains(element)) AVLTree.this.remove(element);
+            }
+            removeAll(remove);
+            return oldSize < AVLTree.this.size;
         }
 
         @Override
         public boolean removeAll(Collection collection) {
-            T val;
-            List<Object> remove = new ArrayList<>();
+            int oldSize = AVLTree.this.size;
             for (Object element : collection) {
-                val = (T) element;
-                if (isValid(val)) remove.add(element);
+                if (isValid((T) element)) remove(element);
             }
-            return AVLTree.this.removeAll(remove);
+            return oldSize > AVLTree.this.size;
         }
 
         @Override
