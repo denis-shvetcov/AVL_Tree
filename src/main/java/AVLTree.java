@@ -312,7 +312,6 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
     public T floor(T t) {
         if (root == null) return null;
         if (t == null) return last();
-        if (contains(t)) return t;
 
         Node<T> current = root;
         T biggest = root.value.compareTo(t) > 0 ? findMin(root).value : root.value;
@@ -322,7 +321,10 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
             int compareToT = currentVal.compareTo(t);
 
             if (compareToT <= 0 && currentVal.compareTo(biggest) > 0) biggest = currentVal;
-            if (compareToT >= 0)
+
+            if (compareToT == 0 )
+                return currentVal;
+            else if (compareToT > 0)
                 current = current.left;
             else
                 current = current.right;
@@ -347,7 +349,9 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
             int compareToT = currentVal.compareTo(t);
 
             if (compareToT >= 0 && currentVal.compareTo(least) < 0) least = currentVal;
-            if (compareToT >= 0)
+            if (compareToT==0)
+                return currentVal;
+            else if (compareToT > 0)
                 current = current.left;
             else
                 current = current.right;
@@ -673,6 +677,23 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
             }
         }
 
+        private T privFloor(T val) {
+            int compare = to == null ? -1 : val.compareTo(to);
+            if (compare >= 0) {
+                if (toIncluded != null && toIncluded)
+                    return AVLTree.this.floor(to);
+                else
+                    return AVLTree.this.lower(to);
+            } else {
+                compare = from == null ? 1 : val.compareTo(from);
+                if (compare < 0)
+                    return null;
+                else if (compare == 0 && fromIncluded != null && fromIncluded)
+                    return from;
+                else return AVLTree.this.lower(val);
+            }
+        }
+
         private T privHigher(T val) {
             int compare = from == null ? 1 : val.compareTo(from);
             if (compare < 0) {
@@ -690,28 +711,12 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
             }
         }
 
-        private T privFloor(T val) {
-            int compare = to == null ? -1 : val.compareTo(to);
-            if (compare >= 0) {
-                if (toIncluded != null && toIncluded)
-                    return to;
-                else
-                    return AVLTree.this.lower(to);
-            } else {
-                compare = from == null ? 1 : val.compareTo(from);
-                if (compare < 0)
-                    return null;
-                else if (compare == 0 && fromIncluded != null && fromIncluded)
-                    return from;
-                else return AVLTree.this.lower(val);
-            }
-        }
 
         private T privCeiling(T val) {
             int compare = from == null ? 1 : val.compareTo(from);
             if (compare <= 0) {
                 if (fromIncluded != null && fromIncluded)
-                    return from;
+                    return AVLTree.this.ceiling(from);
                 else
                     return AVLTree.this.higher(from);
             } else {

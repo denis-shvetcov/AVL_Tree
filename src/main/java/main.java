@@ -16,10 +16,11 @@ public class main {
         }
         Iterator iterator = tree.iterator();
 
-        Random rand = new Random();
-
-        NavigableSet<Integer> head = tree.headSet(35,false);
-        System.out.println(head.lower(39));
+//        Random rand = new Random();
+        System.out.println(tree.floor(15));
+//
+//        NavigableSet<Integer> head = tree.headSet(35,false);
+//        System.out.println(head.lower(39));
 
     }
 
