@@ -8,34 +8,18 @@ public class main {
     public static void main(String[] args) {
 
         NavigableSet<Integer> set = new TreeSet<>();
-//        for (int i = 0; i < 30; i++) {
-//            set.add(i);
-//        }
+
 
         NavigableSet<Integer> tree = new AVLTree<>();
-        for (int i = 0; i < 30; i++) {
-            tree.add(i);
+        for (int i = 0; i < 10; i++) {
+            tree.add(i*5);
         }
         Iterator iterator = tree.iterator();
 
-        while (iterator.hasNext()) {
-            int val = (int) iterator.next();
-            System.out.println(val);
-            if (val % 3 == 0) iterator.remove();
-        }
+        Random rand = new Random();
 
-        System.out.println();
-        System.out.println();
-        System.out.println();
-
-        iterator = tree.iterator();
-
-        while (iterator.hasNext()) {
-            int val = (int) iterator.next();
-            System.out.println(val);
-            if (val % 3 == 0) iterator.remove();
-        }
-
+        NavigableSet<Integer> head = tree.headSet(35,false);
+        System.out.println(head.lower(39));
 
     }
 

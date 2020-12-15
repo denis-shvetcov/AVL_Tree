@@ -288,7 +288,6 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
 
     @Override
     public T higher(T t) {
-
         if (root == null) return null;
         Node<T> current = root;
         T least = root.value.compareTo(t) <= 0 ? findMax(root).value : root.value;
@@ -313,6 +312,8 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
     public T floor(T t) {
         if (root == null) return null;
         if (t == null) return last();
+        if (contains(t)) return t;
+
         Node<T> current = root;
         T biggest = root.value.compareTo(t) > 0 ? findMin(root).value : root.value;
         T currentVal;
@@ -336,6 +337,7 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
     public T ceiling(T t) {
         if (root == null) return null;
         if (t == null) return first();
+        if (contains(t)) return t;
 
         Node<T> current = root;
         T least = root.value.compareTo(t) < 0 ? findMax(root).value : root.value;
@@ -524,9 +526,14 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
         for (Object element : collection) {
             if (contains(element)) retain.add(element);
         }
-        for (T element : this) {
-            if (!retain.contains(element)) remove.add(element);
+
+        Iterator<T> iterator = iterator();
+        while (iterator.hasNext()) {
+            T element = iterator.next();
+            if (!retain.contains(element)) iterator.remove();
         }
+
+
         return oldSize > size;
     }
 
@@ -653,7 +660,7 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
             int compare = to == null ? -1 : val.compareTo(to);
             if (compare > 0) {
                 if (toIncluded != null && toIncluded)
-                    return to;
+                    return AVLTree.this.floor(to);
                 else
                     return AVLTree.this.lower(to);
             } else if (compare == 0) {
@@ -670,7 +677,7 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
             int compare = from == null ? 1 : val.compareTo(from);
             if (compare < 0) {
                 if (fromIncluded != null && fromIncluded)
-                    return from;
+                    return AVLTree.this.ceiling(to);
                 else
                     return AVLTree.this.higher(from);
             } else if (compare == 0) {
@@ -818,18 +825,17 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
 
         public boolean isInRange(T fromV, Boolean fromInc, T toV, Boolean toInc) {
             if (from != null && fromV != null) {
-
                 int fromComp = fromV.compareTo(from);
                 if (fromComp < 0)
                     return false;
-                else if ((fromComp == 0 && fromInc == true && fromIncluded == false))
+                else if ((fromComp == 0 && fromInc && !fromIncluded))
                     return false;
             }
             if (to != null && toV != null) {
                 int toComp = toV.compareTo(to);
                 if (toComp > 0)
                     return false;
-                else if (toComp == 0 && toIncluded == false && toInc == true)
+                else if (toComp == 0 && !toIncluded && toInc)
                     return false;
             }
             return true;
@@ -916,32 +922,32 @@ public class AVLTree<T extends Comparable<T>> implements NavigableSet<T> {
         public boolean remove(Object o) {
             T val = (T) o;
             if (isValid(val)) {
-                boolean res = AVLTree.this.remove(val);
-                return res;
+                return AVLTree.this.remove(val);
             } else return false;
         }
 
         @Override
         public boolean addAll(Collection collection) {
-            int oldSize = countSize();
+            int oldSize = AVLTree.this.size;
             for (Object element : collection) {
                 add((T) element);
             }
-            return oldSize < countSize();
+            return oldSize < AVLTree.this.size;
         }
 
         @Override
         public boolean retainAll(Collection collection) {
             int oldSize = AVLTree.this.size;
             Set<Object> retain = new HashSet<>();
-            Set<Object> remove = new HashSet<>();
             for (Object element : collection) {
                 if (contains(element)) retain.add(element);
             }
-            for (T element : this) {
-                if (!retain.contains(element)) AVLTree.this.remove(element);
+            Iterator iterator = iterator();
+            while (iterator.hasNext()) {
+                Object element = iterator.next();
+                if (!retain.contains(element)) iterator.remove();
             }
-            removeAll(remove);
+
             return oldSize < AVLTree.this.size;
         }
 
